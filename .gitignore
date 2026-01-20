@@ -1,0 +1,14 @@
+# Rust
+/target/
+Cargo.lock
+
+# OCR 模型文件（太大，不提交）
+/models/*.onnx
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 游戏截图
+game_end_*.png

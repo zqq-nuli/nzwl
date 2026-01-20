@@ -1,0 +1,47 @@
+[package]
+name = "nz-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Windows API
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_Graphics_Gdi",
+    "Win32_System_LibraryLoader",
+] }
+
+# OCR - 使用 ocr-rs (MNN 后端，无内存泄漏问题)
+ocr-rs = "2.0"
+
+# Image processing
+image = "0.25"
+imageproc = "0.25"
+
+# Screen capture
+win-screenshot = "4.0"
+
+# 移除了 global-hotkey，改用 Windows 原生 RegisterHotKey API
+
+# String similarity
+strsim = "0.11"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# GUI for OCR test tool
+eframe = "0.31"
+
+# OCR 测试工具
+[[bin]]
+name = "ocr-test"
+path = "src/bin/ocr_test.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
