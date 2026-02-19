@@ -28,9 +28,19 @@ win-screenshot = "4.0"
 # String similarity
 strsim = "0.11"
 
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# File dialog
+rfd = "0.15"
+
 # Error handling
 anyhow = "1.0"
 thiserror = "2.0"
+
+# Dynamic library loading
+libloading = "0.8"
 
 # GUI for OCR test tool
 eframe = "0.31"
@@ -40,8 +50,18 @@ eframe = "0.31"
 name = "ocr-test"
 path = "src/bin/ocr_test.rs"
 
+# Logitech 驱动测试工具
+[[bin]]
+name = "logitech-test"
+path = "src/bin/logitech_test.rs"
+
+# 地图策略编辑器
+[[bin]]
+name = "map-editor"
+path = "src/bin/map_editor.rs"
+
 [profile.release]
 opt-level = 3
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
 strip = true

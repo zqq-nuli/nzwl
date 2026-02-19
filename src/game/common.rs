@@ -10,9 +10,9 @@ use windows::Win32::UI::WindowsAndMessaging::{
     FindWindowW, MoveWindow, SetWindowPos, HWND_TOPMOST, SWP_SHOWWINDOW,
 };
 
-use crate::keys::{
-    click_at, left_click_legacy, move_to, press_key, tap_key, VK_4, VK_5, VK_A, VK_D, VK_G, VK_N,
-    VK_SPACE,
+use crate::input::{
+    click_at, left_click, move_to, press_key, send_relative, tap_key, VK_4, VK_5, VK_6, VK_A, VK_D,
+    VK_G, VK_N, VK_SPACE,
 };
 use crate::ocr::{clear_frame_cache, find_text_contains, ocr_screen};
 use crate::stop_flag::should_stop;
@@ -103,8 +103,31 @@ pub fn start_game_with_difficulty(difficulty: &str) -> Result<()> {
         }
     }
 
-    thread::sleep(Duration::from_secs(1));
+    let results = ocr_screen(674, 585, 570, 140, false, IS_DEBUG)?;
+    for result in &results {
+        if should_stop() {
+            println!("[STOP] startGame: 检测到停止信号");
+            return Ok(());
+        }
 
+        let (center_x, center_y) = result.center();
+
+        if result.text.contains("今日不再提醒") {
+            println!("[startGame] 找到 '今日不再提醒'，点击");
+            click_at(898, 609);
+            thread::sleep(Duration::from_millis(200));
+        }
+
+        // 检测"开始"
+        if result.text.contains("确认开启") {
+            println!("[startGame] 找到 '确认开启'，点击");
+            click_at(center_x, center_y);
+            thread::sleep(Duration::from_millis(200));
+        }
+    }
+
+    thread::sleep(Duration::from_secs(1));
+    // 898,609
     // 按空格跳过开场
     press_key(VK_SPACE, 2.0);
     thread::sleep(Duration::from_secs(5));
@@ -134,7 +157,7 @@ pub fn start_game_with_difficulty(difficulty: &str) -> Result<()> {
     Ok(())
 }
 
-/// 购买陷阱
+/// 购买陷阱 - 按顺序购买：1.防空导弹 2.自修复磁暴塔 3.破坏者 4.修理站
 pub fn buy_traps() -> Result<()> {
     if should_stop() {
         println!("[STOP] buy_traps: 检测到停止信号，跳过");
@@ -154,28 +177,38 @@ pub fn buy_traps() -> Result<()> {
     println!("[buy_traps] OCR 结果：");
 
     for result in &results {
+        println!("  识别到: [{}] 坐标: {:?}", result.text, result.box_points);
+    }
+
+    // 按顺序购买陷阱
+    let trap_order = ["防空导弹", "自修复磁暴塔", "破坏者", "修理站"];
+    thread::sleep(Duration::from_millis(1000));
+
+    for trap_name in trap_order {
         if should_stop() {
             tap_key(VK_N);
             return Ok(());
         }
 
-        println!("  识别到: [{}] 坐标: {:?}", result.text, result.box_points);
-
-        // 查找破坏者或自修复磁暴塔
-        if result.text.contains("破坏者") || result.text.contains("自修复磁暴塔") {
-            println!("[buy_traps] 找到 '{}'，购买", result.text);
+        // 查找该陷阱
+        if let Some(result) = find_text_contains(&results, trap_name) {
+            println!("[buy_traps] 找到 '{}'，购买", trap_name);
             let (center_x, center_y) = result.center();
 
             // 先移动到位置（偏移 50 像素）
             move_to(center_x + 50, center_y + 50);
-            thread::sleep(Duration::from_millis(200));
+            // 增加延迟让 UE4 注册鼠标位置
+            thread::sleep(Duration::from_millis(300));
+
             // 多次点击确保购买成功
-            left_click_legacy();
-            thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
-            thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
+            thread::sleep(Duration::from_millis(300));
+            left_click();
+            thread::sleep(Duration::from_millis(300));
+            left_click();
             thread::sleep(Duration::from_millis(500));
+        } else {
+            println!("[buy_traps] 未找到 '{}'", trap_name);
         }
     }
 
@@ -211,17 +244,17 @@ pub fn wait_for_game_end() -> Result<()> {
             let (x, y) = result.center();
             move_to(x + 50, y + 50);
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(500));
             continue;
         }
 
-        // 检测"赛季经验"并截图
-        if find_text_contains(&results, "赛季经验").is_some() {
+        // 检测"任务完成"并截图
+        if find_text_contains(&results, "阶段完成").is_some() {
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -235,10 +268,10 @@ pub fn wait_for_game_end() -> Result<()> {
         }
 
         // 保持活动
-        press_key(VK_D, 0.5);
-        press_key(VK_A, 0.5);
-        press_key(VK_4, 5.0);
+        // press_key(VK_D, 0.5);
+        // press_key(VK_A, 0.5);
         press_key(VK_5, 5.0);
+        press_key(VK_6, 5.0);
         tap_key(VK_SPACE);
         tap_key(VK_G);
 
@@ -251,4 +284,71 @@ pub fn wait_for_game_end() -> Result<()> {
 /// 清空 OCR 缓存的包装函数
 pub fn clear_cache() {
     clear_frame_cache();
+}
+
+/// 鼠标移动到某个坐标，放置某个陷阱
+/// - x, y: 放置坐标
+/// - trap_key: 陷阱快捷键 (如 VK_4, VK_5 等)
+pub fn place_trap_at(x: i32, y: i32, trap_key: u16) -> Result<()> {
+    tap_key(trap_key);
+    thread::sleep(Duration::from_millis(1000));
+    move_to(x, y);
+    thread::sleep(Duration::from_millis(1000));
+    left_click();
+    thread::sleep(Duration::from_millis(200));
+    left_click();
+    thread::sleep(Duration::from_millis(300));
+    Ok(())
+}
+
+/// 游戏动作枚举 - 用于批量执行并自动检查停止信号
+pub enum GameAction {
+    /// 按住键指定时间（秒）
+    PressKey(u16, f64),
+    /// 点击键
+    TapKey(u16),
+    /// 相对移动鼠标（视角转动）
+    SendRelative(i32, i32),
+    /// 等待指定时间（秒）
+    Sleep(f64),
+    /// 点击鼠标
+    Click,
+    /// 移动鼠标到坐标
+    MoveTo(i32, i32),
+}
+
+/// 执行动作序列，每个动作后自动检查停止信号
+///
+/// # Returns
+/// - Ok(true) 全部执行完成
+/// - Ok(false) 检测到停止信号，提前退出
+pub fn execute_actions(actions: &[GameAction]) -> Result<bool> {
+    for action in actions {
+        if should_stop() {
+            println!("[STOP] execute_actions: 检测到停止信号");
+            return Ok(false);
+        }
+
+        match action {
+            GameAction::PressKey(vk, duration) => {
+                press_key(*vk, *duration);
+            }
+            GameAction::TapKey(vk) => {
+                tap_key(*vk);
+            }
+            GameAction::SendRelative(dx, dy) => {
+                send_relative(*dx, *dy);
+            }
+            GameAction::Sleep(secs) => {
+                thread::sleep(Duration::from_secs_f64(*secs));
+            }
+            GameAction::Click => {
+                left_click();
+            }
+            GameAction::MoveTo(x, y) => {
+                move_to(*x, *y);
+            }
+        }
+    }
+    Ok(true)
 }

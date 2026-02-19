@@ -53,6 +53,65 @@ pub fn save_screenshot(img: &RgbImage, path: &str) -> Result<()> {
     Ok(())
 }
 
+/// 获取屏幕某个坐标点的颜色
+///
+/// # Returns
+/// 返回 RGB 颜色值 (0xRRGGBB 格式)
+pub fn get_pixel_color(x: i32, y: i32) -> Result<u32> {
+    let buf = capture_display()
+        .map_err(|e| anyhow!("截取屏幕失败: {:?}", e))?;
+
+    let img = image::RgbaImage::from_raw(buf.width, buf.height, buf.pixels)
+        .context("无法创建图像缓冲区")?;
+
+    let pixel = img.get_pixel(x as u32, y as u32);
+    let r = pixel[0] as u32;
+    let g = pixel[1] as u32;
+    let b = pixel[2] as u32;
+
+    Ok((r << 16) | (g << 8) | b)
+}
+
+/// 检查屏幕某个坐标点的颜色是否等于指定值
+///
+/// # Arguments
+/// * `x` - X 坐标
+/// * `y` - Y 坐标
+/// * `expected_color` - 期望的颜色值 (0xRRGGBB 格式)
+///
+/// # Returns
+/// 颜色匹配返回 true，否则返回 false
+pub fn check_pixel_color(x: i32, y: i32, expected_color: u32) -> Result<bool> {
+    let actual_color = get_pixel_color(x, y)?;
+    Ok(actual_color == expected_color)
+}
+
+/// 检查屏幕某个坐标点的颜色是否等于指定值（带容差）
+///
+/// # Arguments
+/// * `x` - X 坐标
+/// * `y` - Y 坐标
+/// * `expected_color` - 期望的颜色值 (0xRRGGBB 格式)
+/// * `tolerance` - 每个通道允许的误差值 (0-255)
+///
+/// # Returns
+/// 颜色在容差范围内返回 true，否则返回 false
+pub fn check_pixel_color_tolerance(x: i32, y: i32, expected_color: u32, tolerance: u8) -> Result<bool> {
+    let actual_color = get_pixel_color(x, y)?;
+
+    let ar = ((actual_color >> 16) & 0xFF) as i32;
+    let ag = ((actual_color >> 8) & 0xFF) as i32;
+    let ab = (actual_color & 0xFF) as i32;
+
+    let er = ((expected_color >> 16) & 0xFF) as i32;
+    let eg = ((expected_color >> 8) & 0xFF) as i32;
+    let eb = (expected_color & 0xFF) as i32;
+
+    let t = tolerance as i32;
+
+    Ok((ar - er).abs() <= t && (ag - eg).abs() <= t && (ab - eb).abs() <= t)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

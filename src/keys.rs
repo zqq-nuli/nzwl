@@ -24,16 +24,43 @@ pub const VK_ALT: u16 = 0x12;
 
 // 字母键 A-Z
 pub const VK_A: u16 = 0x41;
+pub const VK_B: u16 = 0x42;
+pub const VK_C: u16 = 0x43;
 pub const VK_D: u16 = 0x44;
+pub const VK_E: u16 = 0x45;
+pub const VK_F: u16 = 0x46;
 pub const VK_G: u16 = 0x47;
+pub const VK_H: u16 = 0x48;
+pub const VK_I: u16 = 0x49;
+pub const VK_J: u16 = 0x4A;
+pub const VK_K: u16 = 0x4B;
+pub const VK_L: u16 = 0x4C;
+pub const VK_M: u16 = 0x4D;
 pub const VK_N: u16 = 0x4E;
 pub const VK_O: u16 = 0x4F;
+pub const VK_P: u16 = 0x50;
+pub const VK_Q: u16 = 0x51;
+pub const VK_R: u16 = 0x52;
 pub const VK_S: u16 = 0x53;
+pub const VK_T: u16 = 0x54;
+pub const VK_U: u16 = 0x55;
+pub const VK_V: u16 = 0x56;
 pub const VK_W: u16 = 0x57;
+pub const VK_X: u16 = 0x58;
+pub const VK_Y: u16 = 0x59;
+pub const VK_Z: u16 = 0x5A;
 
 // 数字键 0-9
+pub const VK_1: u16 = 0x31;
+pub const VK_2: u16 = 0x32;
+pub const VK_3: u16 = 0x33;
 pub const VK_4: u16 = 0x34;
 pub const VK_5: u16 = 0x35;
+pub const VK_6: u16 = 0x36;
+pub const VK_7: u16 = 0x37;
+pub const VK_8: u16 = 0x38;
+pub const VK_9: u16 = 0x39;
+pub const VK_0: u16 = 0x30;
 
 // 功能键 F1-F12
 pub const VK_F1: u16 = 0x70;
@@ -188,6 +215,42 @@ pub fn click_at(x: i32, y: i32) {
     left_click_legacy();
 }
 
+/// 滚动方向
+pub enum ScrollDirection {
+    Up,
+    Down,
+}
+
+/// 鼠标滚轮滚动
+/// - direction: 滚动方向 (Up/Down)
+/// - count: 滚动次数
+/// - interval_secs: 每次滚动之间的间隔（秒）
+pub fn mouse_scroll(direction: ScrollDirection, count: u32, interval_secs: f64) {
+    // WHEEL_DELTA = 120，向上为正，向下为负
+    let delta: i32 = match direction {
+        ScrollDirection::Up => 120,
+        ScrollDirection::Down => -120,
+    };
+
+    let dir_str = match direction {
+        ScrollDirection::Up => "上",
+        ScrollDirection::Down => "下",
+    };
+
+    println!("[鼠标滚动] 向{} 滚动 {} 次，间隔 {} 秒", dir_str, count, interval_secs);
+
+    for i in 0..count {
+        unsafe {
+            // MOUSEEVENTF_WHEEL = 0x0800
+            mouse_event(MOUSE_EVENT_FLAGS(0x0800), 0, 0, delta, 0);
+        }
+
+        if i < count - 1 {
+            thread::sleep(Duration::from_secs_f64(interval_secs));
+        }
+    }
+}
+
 // ===== 方向移动（视角转动）=====
 
 /// 视角向左转
@@ -330,16 +393,49 @@ pub fn press_key_sequence(actions: &[KeyAction]) {
 
 /// 从字符串获取虚拟键码
 pub fn get_vk_code(key: &str) -> Option<u16> {
-    match key.to_uppercase().as_str() {
-        "A" => Some(VK_A),
-        "D" => Some(VK_D),
-        "G" => Some(VK_G),
-        "N" => Some(VK_N),
-        "O" => Some(VK_O),
-        "S" => Some(VK_S),
-        "W" => Some(VK_W),
-        "4" => Some(VK_4),
-        "5" => Some(VK_5),
+    let key = key.to_uppercase();
+    let key = key.as_str();
+
+    match key {
+        // 字母 A-Z (0x41-0x5A)
+        "A" => Some(0x41),
+        "B" => Some(0x42),
+        "C" => Some(0x43),
+        "D" => Some(0x44),
+        "E" => Some(0x45),
+        "F" => Some(0x46),
+        "G" => Some(0x47),
+        "H" => Some(0x48),
+        "I" => Some(0x49),
+        "J" => Some(0x4A),
+        "K" => Some(0x4B),
+        "L" => Some(0x4C),
+        "M" => Some(0x4D),
+        "N" => Some(0x4E),
+        "O" => Some(0x4F),
+        "P" => Some(0x50),
+        "Q" => Some(0x51),
+        "R" => Some(0x52),
+        "S" => Some(0x53),
+        "T" => Some(0x54),
+        "U" => Some(0x55),
+        "V" => Some(0x56),
+        "W" => Some(0x57),
+        "X" => Some(0x58),
+        "Y" => Some(0x59),
+        "Z" => Some(0x5A),
+        // 数字 0-9 (0x30-0x39)
+        "0" => Some(0x30),
+        "1" => Some(0x31),
+        "2" => Some(0x32),
+        "3" => Some(0x33),
+        "4" => Some(0x34),
+        "5" => Some(0x35),
+        "6" => Some(0x36),
+        "7" => Some(0x37),
+        "8" => Some(0x38),
+        "9" => Some(0x39),
+        // 功能键
         "SPACE" => Some(VK_SPACE),
         "ENTER" => Some(VK_RETURN),
         "ESC" => Some(VK_ESCAPE),
@@ -347,8 +443,19 @@ pub fn get_vk_code(key: &str) -> Option<u16> {
         "SHIFT" => Some(VK_SHIFT),
         "CTRL" => Some(VK_CONTROL),
         "ALT" => Some(VK_ALT),
-        "F1" => Some(VK_F1),
-        "F2" => Some(VK_F2),
+        // F1-F12
+        "F1" => Some(0x70),
+        "F2" => Some(0x71),
+        "F3" => Some(0x72),
+        "F4" => Some(0x73),
+        "F5" => Some(0x74),
+        "F6" => Some(0x75),
+        "F7" => Some(0x76),
+        "F8" => Some(0x77),
+        "F9" => Some(0x78),
+        "F10" => Some(0x79),
+        "F11" => Some(0x7A),
+        "F12" => Some(0x7B),
         _ => None,
     }
 }

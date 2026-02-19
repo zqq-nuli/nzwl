@@ -6,9 +6,9 @@ use anyhow::Result;
 use std::thread;
 use std::time::Duration;
 
-use crate::keys::{
-    left_click_legacy, move_down, move_left, move_to, press_key, press_key_sequence, tap_key,
-    KeyAction, VK_4, VK_5, VK_A, VK_D, VK_G, VK_O, VK_S, VK_SPACE, VK_W,
+use crate::input::{
+    left_click, move_down, move_left, move_to, press_key, press_key_sequence, tap_key,
+    KeyAction, VK_6, VK_5, VK_A, VK_D, VK_G, VK_O, VK_S, VK_SPACE, VK_W,
 };
 use crate::ocr::{find_text_contains, ocr_screen};
 use crate::stop_flag::should_stop;
@@ -47,7 +47,7 @@ fn place_first_level_traps() -> Result<()> {
 
     // 放置左侧陷阱
     let left_points = [(1055, 525), (1221, 525)];
-    tap_key(VK_4);
+    tap_key(VK_5);
     thread::sleep(Duration::from_millis(300));
 
     for (x, y) in left_points {
@@ -60,9 +60,9 @@ fn place_first_level_traps() -> Result<()> {
         move_to(x, y);
         thread::sleep(Duration::from_millis(200));
         // 多次点击确保放置成功
-        left_click_legacy();
+        left_click();
         thread::sleep(Duration::from_millis(200));
-        left_click_legacy();
+        left_click();
         thread::sleep(Duration::from_millis(300));
     }
 
@@ -87,9 +87,9 @@ fn place_first_level_traps() -> Result<()> {
         move_to(x, y);
         thread::sleep(Duration::from_millis(200));
         // 多次点击确保放置成功
-        left_click_legacy();
+        left_click();
         thread::sleep(Duration::from_millis(200));
-        left_click_legacy();
+        left_click();
         thread::sleep(Duration::from_millis(300));
     }
 
@@ -105,7 +105,7 @@ fn place_first_level_traps() -> Result<()> {
     let left_paotai = [(1396, 359), (1393, 188)];
     let right_paotai = [(518, 365), (516, 194)];
 
-    tap_key(VK_5);
+    tap_key(VK_6);
     println!("[place_traps] 等待波次2出现...");
 
     // 等待波次2
@@ -133,11 +133,11 @@ fn place_first_level_traps() -> Result<()> {
             let (x, y) = result.center();
             move_to(x, y);
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(200));
-            left_click_legacy();
+            left_click();
             thread::sleep(Duration::from_millis(500));
         }
 
@@ -149,9 +149,9 @@ fn place_first_level_traps() -> Result<()> {
             for (x, y) in right_paotai {
                 move_to(x, y);
                 thread::sleep(Duration::from_millis(200));
-                left_click_legacy();
+                left_click();
                 thread::sleep(Duration::from_millis(200));
-                left_click_legacy();
+                left_click();
                 thread::sleep(Duration::from_millis(300));
             }
 
@@ -162,9 +162,9 @@ fn place_first_level_traps() -> Result<()> {
             for (x, y) in left_paotai {
                 move_to(x, y);
                 thread::sleep(Duration::from_millis(200));
-                left_click_legacy();
+                left_click();
                 thread::sleep(Duration::from_millis(200));
-                left_click_legacy();
+                left_click();
                 thread::sleep(Duration::from_millis(300));
             }
 

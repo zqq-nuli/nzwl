@@ -7,7 +7,7 @@
 //!
 //! 通过修改下面的 `pub use` 语句来切换版本
 
-mod common;
+pub mod common;
 mod hero;
 mod hell;
 mod normal;
@@ -20,7 +20,7 @@ mod normal;
 // 英雄版（困难难度）- 当前启用
 pub use hero::*;
 
-// 炼狱版（炼狱难度）- 取消下面注释启用
+// 炼狱版（炼狱难度）
 // pub use hell::*;
 
 // 普通版（普通难度）- 取消下面注释启用

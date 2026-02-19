@@ -1,14 +1,50 @@
-# Rust
+﻿# Rust
 /target/
 Cargo.lock
 
-# OCR 模型文件（太大，不提交）
+# OCR models (optional large files)
 /models/*.onnx
+
+# Build/release artifacts
+/dist/
+/release/
+/*.zip
+/*.7z
+/*.rar
+
+# Runtime screenshots and logs
+/game_end_*.png
+*.log
+
+# Temporary/local scratch files
+/nul
+/tmp_*.rs
+/tmp_*.json
+/tmp_*.b64
+/*.b64
+/*tmp_*.b64
+/*tmp_*.json
+
+# Local docs/notes
+/CLAUDE.md
+/plan.md
+
+# External tools and runtime DLL
+/tools/
+/IbInputSimulator.dll
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.secret
+secrets.*
 
 # IDE
 .idea/
 .vscode/
 *.swp
-
-# 游戏截图
-game_end_*.png

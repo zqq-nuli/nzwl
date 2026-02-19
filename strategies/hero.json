@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "name": "英雄模式",
+    "difficulty": "困难",
+    "screenshot": "",
+    "grid_pixel_size": 64.0,
+    "offset_x": 0.0,
+    "offset_y": 0.0
+  },
+  "shop_order": [
+    "防空导弹",
+    "自修复磁暴塔",
+    "破坏者",
+    "修理站"
+  ],
+  "buildings": [
+    {
+      "id": "left_trap_1",
+      "name": "自修复磁暴塔",
+      "trap_key": "5",
+      "screen_x": 1055,
+      "screen_y": 525,
+      "wave": 1,
+      "is_late": false
+    },
+    {
+      "id": "left_trap_2",
+      "name": "自修复磁暴塔",
+      "trap_key": "5",
+      "screen_x": 1221,
+      "screen_y": 525,
+      "wave": 1,
+      "is_late": false
+    },
+    {
+      "id": "right_trap_1",
+      "name": "自修复磁暴塔",
+      "trap_key": "5",
+      "screen_x": 857,
+      "screen_y": 532,
+      "wave": 1,
+      "is_late": false
+    },
+    {
+      "id": "right_trap_2",
+      "name": "自修复磁暴塔",
+      "trap_key": "5",
+      "screen_x": 687,
+      "screen_y": 532,
+      "wave": 1,
+      "is_late": false
+    },
+    {
+      "id": "right_cannon_1",
+      "name": "破坏者",
+      "trap_key": "6",
+      "screen_x": 518,
+      "screen_y": 365,
+      "wave": 2,
+      "is_late": true
+    },
+    {
+      "id": "right_cannon_2",
+      "name": "破坏者",
+      "trap_key": "6",
+      "screen_x": 516,
+      "screen_y": 194,
+      "wave": 2,
+      "is_late": true
+    },
+    {
+      "id": "left_cannon_1",
+      "name": "破坏者",
+      "trap_key": "6",
+      "screen_x": 1396,
+      "screen_y": 359,
+      "wave": 2,
+      "is_late": true
+    },
+    {
+      "id": "left_cannon_2",
+      "name": "破坏者",
+      "trap_key": "6",
+      "screen_x": 1393,
+      "screen_y": 188,
+      "wave": 2,
+      "is_late": true
+    }
+  ],
+  "upgrades": [],
+  "demolishes": [],
+  "movement_phases": [
+    {
+      "name": "波次1前移动到左侧",
+      "trigger": "before_wave_1",
+      "actions": [
+        { "type": "PressKey", "key": "S", "duration": 5.0 },
+        { "type": "PressKey", "key": "A", "duration": 5.0 }
+      ]
+    },
+    {
+      "name": "波次1放置后移动到右侧",
+      "trigger": "during_wave_1",
+      "actions": [
+        { "type": "PressKey", "key": "D", "duration": 5.0 }
+      ]
+    },
+    {
+      "name": "波次2等待时巡逻",
+      "trigger": "wait_wave_2",
+      "actions": [
+        { "type": "PressKey", "key": "A", "duration": 0.5 },
+        { "type": "Sleep", "duration": 0.5 },
+        { "type": "PressKey", "key": "D", "duration": 2.0 },
+        { "type": "Sleep", "duration": 2.0 }
+      ]
+    },
+    {
+      "name": "波次2放置后移动到左侧",
+      "trigger": "during_wave_2",
+      "actions": [
+        { "type": "PressKey", "key": "A", "duration": 5.0 }
+      ]
+    },
+    {
+      "name": "去安全点",
+      "trigger": "after_placement",
+      "actions": [
+        { "type": "SendRelative", "dx": -1100, "dy": 0 },
+        { "type": "PressKey", "key": "W", "duration": 2.0 },
+        { "type": "SendRelative", "dx": -1100, "dy": 0 },
+        { "type": "PressKey", "key": "W", "duration": 5.0 },
+        { "type": "KeyDown", "key": "W" },
+        { "type": "TapKey", "key": "SPACE" },
+        { "type": "Sleep", "duration": 0.5 },
+        { "type": "TapKey", "key": "SPACE" },
+        { "type": "KeyUp", "key": "W" },
+        { "type": "PressKey", "key": "W", "duration": 1.0 },
+        { "type": "PressKey", "key": "D", "duration": 1.0 },
+        { "type": "Sleep", "duration": 1.0 },
+        { "type": "SendRelative", "dx": -1672, "dy": 0 },
+        { "type": "SendRelative", "dx": 0, "dy": 44 }
+      ]
+    }
+  ]
+}

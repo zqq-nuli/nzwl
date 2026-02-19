@@ -54,9 +54,19 @@ impl OcrResultItem {
     }
 }
 
+/// 获取 exe 所在目录
+fn get_exe_dir() -> std::path::PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+}
+
 /// 初始化 OCR 引擎
 pub fn init_ocr() -> Result<()> {
-    let models_dir = Path::new("models");
+    // 使用 exe 所在目录作为基准路径
+    let exe_dir = get_exe_dir();
+    let models_dir = exe_dir.join("models");
 
     // MNN 格式模型文件 (PP-OCRv4)
     let det_model = models_dir.join("ch_PP-OCRv4_det_infer.mnn");
