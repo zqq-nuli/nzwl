@@ -1,22 +1,22 @@
-﻿# 逆战未来挂机框架（开发中）
+﻿# 逆战未来挂机框架
 
 ## 项目说明
 
-本项目是《逆战：未来》自动化挂机框架的 Rust 实现，当前处于开发中状态。
+本项目是《逆战：未来》自动化挂机框架的 Rust 实现。
 
 当前包含：
-- 主程序（全局热键触发自动流程）
-- 策略执行器（支持 JSON 策略）
-- 地图策略编辑器（GUI）
+- GUI 主程序（地图选择、启动/停止、实时波次/金币监控、日志面板）
 - OCR 调试工具（GUI）
-- Logitech 驱动输入测试工具
+- 波次函数策略系统（每个地图/难度一个模块，按波次编写逻辑）
+- 后台监控系统（波次 + 金币 OCR 轮询）
+- 多分辨率自动适配
 
 ## 环境要求
 
 - Windows 10/11（x64）
 - Rust 1.75+（建议使用最新 stable）
-- 游戏窗口建议为 `1920x1080`
-- 建议以管理员身份运行（全局热键/输入注入更稳定）
+- 游戏窗口标题为 `逆战：未来  `（末尾 2 个空格）
+- 建议以管理员身份运行
 
 可选依赖（仅 Logitech 模式需要）：
 - `IbInputSimulator.dll`
@@ -27,49 +27,55 @@
 ```text
 nz-rust/
 ├─ src/
-├─ strategies/
-├─ models/
-│  ├─ ch_PP-OCRv4_det_infer.mnn
-│  ├─ ch_PP-OCRv4_rec_infer.mnn
-│  └─ ppocr_keys_v4.txt
-└─ scripts/
-   └─ package_release.ps1
+│  ├─ main.rs              # GUI 主程序
+│  ├─ monitor.rs           # 后台波次/金币监控
+│  ├─ game/
+│  │  ├─ mod.rs            # 地图注册（available_maps）
+│  │  ├─ common.rs         # 通用函数（购买、放置、等待等）
+│  │  ├─ training_hard.rs  # 训练基地 - 困难
+│  │  └─ building_inferno.rs # 大厦 - 炼狱
+│  ├─ ocr.rs               # OCR 引擎封装
+│  ├─ screen.rs            # 截图 + 分辨率缩放
+│  ├─ input.rs             # 输入抽象层
+│  ├─ keys.rs              # SendInput 后端
+│  ├─ logitech.rs          # Logitech 驱动后端
+│  └─ stop_flag.rs         # 停止信号
+├─ models/                 # OCR 模型文件（MNN 格式）
+├─ docs/
+│  └─ strategy-guide.md    # 策略编写指南
+└─ images/                 # 参考图片
 ```
 
 ## 如何运行
 
-### 1. 直接运行主程序
+### 1. 运行 GUI 主程序
 
 ```powershell
 cargo run --release
 ```
 
-主程序热键：
-- `F1`：开始循环
-- `F2`：请求停止
-- `Ctrl + C`：退出程序
+在 GUI 中选择地图和难度，点击"开始"即可。热键：
+- `F1`：开始
+- `F2`：停止
 
-### 2. 指定策略文件运行
-
-```powershell
-cargo run --release -- --strategy strategies/hero.json
-```
-
-### 3. 运行调试工具
+### 2. 运行 OCR 调试工具
 
 ```powershell
-# OCR + 输入调试 GUI
 cargo run --release --bin ocr-test
-
-# 地图策略编辑器 GUI
-cargo run --release --bin map-editor
-
-# Logitech 驱动连通性测试
-cargo run --release --bin logitech-test
-
-# 鼠标绝对定位/点击测试
-cargo run --release --bin mouse_test
 ```
+
+## 编写策略
+
+想为新地图/难度编写自动化策略？请阅读：
+
+**[策略编写指南 (docs/strategy-guide.md)](docs/strategy-guide.md)**
+
+指南包含：
+- 3 步添加新地图的完整流程
+- 坐标系统与多分辨率适配详解（`scale_x`/`scale_y` vs `dev_x`/`dev_y`）
+- 如何修改基准分辨率让你直接用自己屏幕上的坐标
+- 所有常用函数的参考和示例
+- 调试技巧
 
 ## 如何测试
 
@@ -95,34 +101,9 @@ cargo test --release test_capture_region -- --nocapture
 cargo test --release test_ocr_custom_region -- --nocapture
 ```
 
-## 如何打包 Release（主程序 + 调试工具）
+## 安全说明
 
-执行：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\package_release.ps1
-```
-
-脚本会自动：
-- 编译 `release` 全部二进制
-- 收集主程序和调试工具到 `dist/release/<时间戳>/`
-- 复制 `models/` 与 `strategies/`
-- 自动生成压缩包 `dist/nzwl-release-<时间戳>.zip`
-
-## 安全说明（避免提交私钥）
-
-仓库已通过 `.gitignore` 默认忽略：
-- `.env*`
-- 常见证书/密钥文件（`*.pem`, `*.key`, `*.p12`, `*.pfx` 等）
-- 本地临时与打包产物（`dist/`, `*.zip`, `tmp_*`）
-
-如需提交新文件，建议先执行：
-
-```powershell
-git status --short
-```
-
-确认无敏感文件后再 `git add`。
+仓库已通过 `.gitignore` 默认忽略敏感文件（`.env*`、`*.pem`、`*.key` 等）和打包产物（`dist/`、`*.zip`）。
 
 
 ## 免责声明与使用限制
