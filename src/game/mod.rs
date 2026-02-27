@@ -1,31 +1,40 @@
 //! 游戏自动化逻辑模块
 //!
-//! 支持多个游戏版本：
-//! - hero: 英雄版（困难难度）
-//! - hell: 炼狱版（炼狱难度）
-//! - normal: 普通版（普通难度）
-//!
-//! 通过修改下面的 `pub use` 语句来切换版本
+//! 每个地图/难度是一个独立模块，包含按波次组织的函数。
+//! 通过 `available_maps()` 注册所有可用地图，供 GUI 下拉框使用。
 
+pub mod building_inferno;
 pub mod common;
-mod hero;
-mod hell;
-mod normal;
+pub mod training_hard;
 
-// ============================================================
-// ▼▼▼ 在这里切换游戏版本 ▼▼▼
-// 取消注释你想要使用的版本，注释掉其他版本
-// ============================================================
+use anyhow::Result;
 
-// 英雄版（困难难度）- 当前启用
-pub use hero::*;
+/// 地图信息（供 GUI 下拉框选择）
+pub struct MapInfo {
+    /// 显示名称
+    pub name: &'static str,
+    /// 难度
+    pub difficulty: &'static str,
+    /// 开始游戏函数
+    pub start_fn: fn() -> Result<()>,
+    /// 执行所有波次函数
+    pub waves_fn: fn() -> Result<()>,
+}
 
-// 炼狱版（炼狱难度）
-// pub use hell::*;
-
-// 普通版（普通难度）- 取消下面注释启用
-// pub use normal::*;
-
-// ============================================================
-// ▲▲▲ 版本切换区域结束 ▲▲▲
-// ============================================================
+/// 获取所有可用地图
+pub fn available_maps() -> Vec<MapInfo> {
+    vec![
+        MapInfo {
+            name: "训练基地",
+            difficulty: "困难",
+            start_fn: training_hard::start_game,
+            waves_fn: training_hard::run_all_waves,
+        },
+        MapInfo {
+            name: "大厦",
+            difficulty: "炼狱",
+            start_fn: building_inferno::start_game,
+            waves_fn: building_inferno::run_all_waves,
+        },
+    ]
+}

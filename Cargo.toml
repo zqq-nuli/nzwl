@@ -9,8 +9,11 @@ windows = { version = "0.58", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
     "Win32_Graphics_Gdi",
+    "Win32_Security",
     "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
 ] }
 
 # OCR - 使用 ocr-rs (MNN 后端，无内存泄漏问题)
@@ -22,8 +25,6 @@ imageproc = "0.25"
 
 # Screen capture
 win-screenshot = "4.0"
-
-# 移除了 global-hotkey，改用 Windows 原生 RegisterHotKey API
 
 # String similarity
 strsim = "0.11"
@@ -42,23 +43,13 @@ thiserror = "2.0"
 # Dynamic library loading
 libloading = "0.8"
 
-# GUI for OCR test tool
+# GUI
 eframe = "0.31"
 
 # OCR 测试工具
 [[bin]]
 name = "ocr-test"
 path = "src/bin/ocr_test.rs"
-
-# Logitech 驱动测试工具
-[[bin]]
-name = "logitech-test"
-path = "src/bin/logitech_test.rs"
-
-# 地图策略编辑器
-[[bin]]
-name = "map-editor"
-path = "src/bin/map_editor.rs"
 
 [profile.release]
 opt-level = 3

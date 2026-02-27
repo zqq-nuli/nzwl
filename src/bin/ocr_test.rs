@@ -12,7 +12,7 @@ use nz_rust::input::{
     self, get_vk_code, key_down, key_up, left_click, move_to, press_key, send_relative, tap_key,
     InputBackend,
 };
-use nz_rust::ocr::{init_ocr, ocr_screen, OcrResultItem};
+use nz_rust::ocr::{init_ocr, ocr_screen, ocr_screen_small, OcrResultItem};
 use nz_rust::screen::capture_region;
 
 /// 测试动作类型
@@ -180,6 +180,10 @@ struct OcrTestApp {
     // 预览图像
     preview_texture: Option<egui::TextureHandle>,
 
+    // ===== 小区域预处理 =====
+    use_preprocess: bool,
+    preprocess_scale: u32,
+
     // ===== 键盘鼠标测试 =====
     // 动作输入
     action_input: String,
@@ -202,6 +206,9 @@ impl Default for OcrTestApp {
             error_msg: String::new(),
             copy_msg: String::new(),
             preview_texture: None,
+            // 小区域预处理
+            use_preprocess: false,
+            preprocess_scale: 3,
             // 键盘鼠标测试
             action_input: String::new(),
             action_configs: Vec::new(),
@@ -538,7 +545,12 @@ impl OcrTestApp {
 
         // 执行 OCR
         let start_time = std::time::Instant::now();
-        match ocr_screen(start_x, start_y, width, height, false, false) {
+        let ocr_result = if self.use_preprocess {
+            ocr_screen_small(start_x, start_y, width, height, self.preprocess_scale, true)
+        } else {
+            ocr_screen(start_x, start_y, width, height, false, false)
+        };
+        match ocr_result {
             Ok(results) => {
                 self.ocr_time_ms = start_time.elapsed().as_secs_f64() * 1000.0;
                 self.results = results;
@@ -548,6 +560,7 @@ impl OcrTestApp {
             }
         }
     }
+
 }
 
 impl eframe::App for OcrTestApp {
@@ -577,7 +590,18 @@ impl eframe::App for OcrTestApp {
                 }
             });
 
-            ui.add_space(10.0);
+            ui.add_space(5.0);
+
+            // 小区域预处理选项
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut self.use_preprocess, "小区域预处理 (放大+二值化)");
+                if self.use_preprocess {
+                    ui.label("放大倍数:");
+                    ui.add(egui::DragValue::new(&mut self.preprocess_scale).range(2..=6));
+                }
+            });
+
+            ui.add_space(5.0);
 
             // 执行按钮和复制代码按钮
             ui.horizontal(|ui| {

@@ -3,7 +3,9 @@
 //! 使用 ocr-rs (MNN 后端) 进行文字识别
 
 use anyhow::{Context, Result};
-use image::RgbImage;
+use image::imageops::{resize, FilterType};
+use image::{DynamicImage, RgbImage};
+use imageproc::contrast::{otsu_level, threshold, ThresholdType};
 use ocr_rs::OcrEngine;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -263,6 +265,150 @@ pub fn ocr_screen(
         for point in &mut result.box_points {
             point[0] += x;
             point[1] += y;
+        }
+    }
+
+    Ok(results)
+}
+
+/// 对小区域图像进行预处理：放大 + 灰度 + Otsu 二值化
+///
+/// 适用于 30x40px 级别的小区域数字识别，渐变色文字经过二值化后变为干净黑白图。
+/// `scale` 为放大倍数，推荐 3-4。
+fn preprocess_small_region(img: &RgbImage, scale: u32) -> RgbImage {
+    let (w, h) = img.dimensions();
+    // 放大 (CatmullRom 适合 upscale)
+    let upscaled = resize(img, w * scale, h * scale, FilterType::CatmullRom);
+    // 灰度化
+    let gray = DynamicImage::ImageRgb8(upscaled).into_luma8();
+    // Otsu 自适应阈值二值化
+    let level = otsu_level(&gray);
+    let binary = threshold(&gray, level, ThresholdType::Binary);
+    // 转回 RGB 给 OCR 引擎
+    DynamicImage::ImageLuma8(binary).to_rgb8()
+}
+
+/// 颜色过滤预处理：保留接近目标颜色的像素，其余置黑，然后放大
+///
+/// 适用于动态背景下的文字识别。通过 RGB 欧氏距离过滤，
+/// 只保留与目标颜色接近的像素（文字），动态背景被直接去除。
+///
+/// # Arguments
+/// * `img` - 原始截图
+/// * `scale` - 放大倍数
+/// * `target_r`, `target_g`, `target_b` - 目标颜色 RGB
+/// * `tolerance` - 颜色距离容差（推荐 25-50）
+fn preprocess_color_filter(
+    img: &RgbImage,
+    scale: u32,
+    target_r: u8,
+    target_g: u8,
+    target_b: u8,
+    tolerance: f64,
+) -> RgbImage {
+    let (w, h) = img.dimensions();
+
+    // 颜色过滤：接近目标颜色的像素 → 白色，其余 → 黑色
+    let mut filtered = RgbImage::new(w, h);
+    for y in 0..h {
+        for x in 0..w {
+            let pixel = img.get_pixel(x, y);
+            let dr = pixel[0] as f64 - target_r as f64;
+            let dg = pixel[1] as f64 - target_g as f64;
+            let db = pixel[2] as f64 - target_b as f64;
+            let dist = (dr * dr + dg * dg + db * db).sqrt();
+            if dist <= tolerance {
+                filtered.put_pixel(x, y, image::Rgb([255, 255, 255]));
+            } else {
+                filtered.put_pixel(x, y, image::Rgb([0, 0, 0]));
+            }
+        }
+    }
+
+    // 放大
+    let upscaled = resize(&filtered, w * scale, h * scale, FilterType::CatmullRom);
+    DynamicImage::ImageRgb8(upscaled).to_rgb8()
+}
+
+/// 截取屏幕小区域，使用颜色过滤预处理 + OCR
+///
+/// 适用于动态背景下的文字识别（如金币区域有动图背景）。
+/// 只保留接近目标颜色的像素，其余全部置黑后再 OCR。
+///
+/// # Arguments
+/// * `x`, `y`, `width`, `height` - 屏幕区域
+/// * `scale` - 放大倍数，推荐 3
+/// * `target_color` - 目标颜色 (R, G, B)
+/// * `tolerance` - 颜色距离容差（推荐 25-50）
+/// * `debug` - 是否输出调试信息
+pub fn ocr_screen_color_filter(
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+    scale: u32,
+    target_color: (u8, u8, u8),
+    tolerance: f64,
+    debug: bool,
+) -> Result<Vec<OcrResultItem>> {
+    let img = crate::screen::capture_region(x, y, width, height)?;
+    let processed = preprocess_color_filter(
+        &img,
+        scale,
+        target_color.0,
+        target_color.1,
+        target_color.2,
+        tolerance,
+    );
+
+    if debug {
+        let _ = processed.save("debug_color_filter.png");
+    }
+
+    let mut results = ocr_image(&processed, false, debug)?;
+
+    // 调整坐标
+    for result in &mut results {
+        for point in &mut result.box_points {
+            point[0] = point[0] / scale as i32 + x;
+            point[1] = point[1] / scale as i32 + y;
+        }
+    }
+
+    Ok(results)
+}
+
+/// 截取屏幕小区域并进行预处理 + OCR（适用于小区域数字识别）
+///
+/// 与 `ocr_screen` 的区别：先对截图进行放大+二值化预处理，适合 30-100px 级别的小区域。
+///
+/// # Arguments
+/// * `x`, `y`, `width`, `height` - 屏幕区域
+/// * `scale` - 放大倍数，推荐 3
+/// * `debug` - 是否输出调试信息
+pub fn ocr_screen_small(
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+    scale: u32,
+    debug: bool,
+) -> Result<Vec<OcrResultItem>> {
+    let img = crate::screen::capture_region(x, y, width, height)?;
+    let processed = preprocess_small_region(&img, scale);
+
+    if debug {
+        // 保存预处理后的图像用于调试
+        let _ = processed.save("debug_preprocessed.png");
+    }
+
+    let mut results = ocr_image(&processed, false, debug)?;
+
+    // 调整坐标：先除以放大倍数还原到原始区域坐标，再加上区域偏移
+    for result in &mut results {
+        for point in &mut result.box_points {
+            point[0] = point[0] / scale as i32 + x;
+            point[1] = point[1] / scale as i32 + y;
         }
     }
 
