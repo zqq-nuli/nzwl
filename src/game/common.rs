@@ -341,9 +341,28 @@ pub fn clear_cache() {
     clear_frame_cache();
 }
 
+/// 简易随机：返回 [min, max] 范围内的整数
+fn random_range(min: u64, max: u64) -> u64 {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos() as u64;
+    min + (nanos % (max - min + 1))
+}
+
+/// 空闲防挂机：随机等待 3-5 秒后按一次空格
+fn idle_action() {
+    let wait_secs = random_range(3, 5);
+    thread::sleep(Duration::from_secs(wait_secs));
+    if !should_stop() {
+        tap_key(VK_SPACE);
+    }
+}
+
 /// 等待金币达到指定数额
 ///
 /// 循环检查后台监控的金币数，直到达到目标或收到停止信号。
+/// 等待期间每 3-5 秒按一次空格防止挂机检测。
 pub fn wait_gold(amount: i64) -> Result<()> {
     println!("[wait_gold] 等待金币 >= {}", amount);
     loop {
@@ -358,13 +377,14 @@ pub fn wait_gold(amount: i64) -> Result<()> {
             return Ok(());
         }
 
-        thread::sleep(Duration::from_millis(500));
+        idle_action();
     }
 }
 
 /// 等待波次到达指定值
 ///
 /// 循环检查后台监控的波次数，直到达到目标或收到停止信号。
+/// 等待期间每 3-5 秒按一次空格防止挂机检测。
 pub fn wait_wave(wave: u32) -> Result<()> {
     println!("[wait_wave] 等待波次 >= {}", wave);
     loop {
@@ -379,7 +399,7 @@ pub fn wait_wave(wave: u32) -> Result<()> {
             return Ok(());
         }
 
-        thread::sleep(Duration::from_millis(500));
+        idle_action();
     }
 }
 
